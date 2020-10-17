@@ -5,6 +5,8 @@
 
 class InfinityClock: public Component {
     static const uint32_t color_cardinal_directions = 0x303030;
+    static const uint32_t color_proximity_makers = 0x202020;
+    static const uint8_t proximity_markers_distance = 3;
     static const ESPColor color_hour_hand;
     static const ESPColor color_minute_hand;
     static const ESPColor color_second_hand;
@@ -17,12 +19,8 @@ class InfinityClock: public Component {
             virtual ~Effect() {}
 
             virtual void apply(AddressableLight &it, const ESPColor &current_color) override {
+                // clear all LED's
                 it.all() = ESPColor::BLACK;
-
-                it[map(0)] = color_cardinal_directions;
-                it[map(15)] = color_cardinal_directions;
-                it[map(30)] = color_cardinal_directions;
-                it[map(45)] = color_cardinal_directions;
 
                 // map hour (12h) to LED index
                 const uint8_t _hour = (hour % 12) * 5;
@@ -32,6 +30,21 @@ class InfinityClock: public Component {
 
                 it[map(minute)] = it[map(minute)].get() + color_minute_hand;
                 it[map(second)] = it[map(second)].get() + color_second_hand;
+
+                // set markers for N/E/S/W directions
+                set_if_clear(it, 0, color_cardinal_directions);
+                set_if_clear(it, 15, color_cardinal_directions);
+                set_if_clear(it, 30, color_cardinal_directions);
+                set_if_clear(it, 45, color_cardinal_directions);
+
+                // set lighter markers for every 5 minutes when there's a clock hand nearby
+                set_if_clear(it, 5, color_proximity_makers, proximity_markers_distance);
+                set_if_clear(it, 10, color_proximity_makers, proximity_markers_distance);
+                set_if_clear(it, 20, color_proximity_makers, proximity_markers_distance);
+                set_if_clear(it, 25, color_proximity_makers, proximity_markers_distance);
+                set_if_clear(it, 35, color_proximity_makers, proximity_markers_distance);
+                set_if_clear(it, 40, color_proximity_makers, proximity_markers_distance);
+                set_if_clear(it, 55, color_proximity_makers, proximity_markers_distance);
             }
 
             void set_time(uint8_t hour, uint8_t minute, uint8_t second) {
@@ -54,6 +67,31 @@ class InfinityClock: public Component {
                     led_index += 60;
                 }
                 return led_index;
+            }
+
+            /**
+             * sets LED to color if it is not on
+             * @param led_index index relative to 0 at the top of the clock, might be negative
+             * @param color color to set on LED if not on
+             * @param proximity also check whether any LED is on next to led_index in this proximity
+             */
+            void set_if_clear(AddressableLight &it, int8_t led_index, ESPColor color, uint8_t proximity = 0) {
+                if (it[map(led_index)].get().is_on()) {
+                    return;  // the LED is already lit up, don't change it
+                }
+
+                if (proximity == 0) {
+                    // proximity feature is not used, enable it
+                    it[map(led_index)] = color;
+                } else {
+                    for (uint8_t i = 0; i <= proximity; i++) {
+                        if (it[map(led_index - i)].get().is_on() || it[map(led_index + i)].get().is_on()) {
+                            // found a LED nearby, enable it and return
+                            it[map(led_index)] = color;
+                            return;
+                        }
+                    }
+                }
             }
     };
 
