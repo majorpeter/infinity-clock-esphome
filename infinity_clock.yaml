@@ -7,14 +7,20 @@ esphome:
 
 <<: !include secrets.yaml
 
+# has to be neopixelus: https://github.com/esphome/issues/issues/776
 light:
-  - platform: fastled_clockless
-    chipset: WS2812B
-    pin: GPIO0
+  - platform: neopixelbus
+    variant: WS2812X
+    method: ESP8266_UART1
+    pin: GPIO2  # only GPIO2 available on ESP-01 with neopixelbus
     num_leds: 60
-    rgb_order: GRB
-    name: "FastLED WS2812 Light"
+    name: "RGB Ledstrip"
+    type: GRB
     id: ledstrip
+    effects:
+      - addressable_color_wipe:
+      - addressable_scan:
+          scan_width: 3
 
 time:
   - platform: homeassistant
