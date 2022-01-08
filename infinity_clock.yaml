@@ -23,8 +23,8 @@ light:
           scan_width: 3
 
 time:
-  - platform: homeassistant
-    id: ha_time
+  - platform: sntp
+    id: sntp_time
 
 custom_component:
   - lambda: |-

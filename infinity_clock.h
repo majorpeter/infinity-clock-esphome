@@ -114,8 +114,10 @@ public:
     }
 
     virtual void loop() override {
-        const ESPTime now = ha_time->now();
-        effect->set_time(now.hour, now.minute, now.second);
+        const ESPTime time = sntp_time->now();
+        if (time.is_valid()) {
+            effect->set_time(time.hour, time.minute, time.second);
+        }
     }
 private:
     Effect *effect;
