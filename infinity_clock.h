@@ -22,29 +22,34 @@ class InfinityClock: public Component {
                 // clear all LED's
                 it.all() = esphome::Color::BLACK;
 
-                // map hour (12h) to LED index
-                const uint8_t _hour = (hour % 12) * 5;
-                it[map(_hour - 1)] = it[map(_hour - 1)].get() + color_hour_hand;
-                it[map(_hour)] = it[map(_hour)].get() + color_hour_hand;
-                it[map(_hour + 1)] = it[map(_hour + 1)].get() + color_hour_hand;
+                if (hasTime) {
+                    // map hour (12h) to LED index
+                    const uint8_t _hour = (hour % 12) * 5;
+                    it[map(_hour - 1)] = it[map(_hour - 1)].get() + color_hour_hand;
+                    it[map(_hour)] = it[map(_hour)].get() + color_hour_hand;
+                    it[map(_hour + 1)] = it[map(_hour + 1)].get() + color_hour_hand;
 
-                it[map(minute)] = it[map(minute)].get() + color_minute_hand;
-                it[map(second)] = it[map(second)].get() + color_second_hand;
+                    it[map(minute)] = it[map(minute)].get() + color_minute_hand;
+                    it[map(second)] = it[map(second)].get() + color_second_hand;
 
-                // set markers for N/E/S/W directions
-                set_if_clear(it, 0, color_cardinal_directions);
-                set_if_clear(it, 15, color_cardinal_directions);
-                set_if_clear(it, 30, color_cardinal_directions);
-                set_if_clear(it, 45, color_cardinal_directions);
+                    // set markers for N/E/S/W directions
+                    set_if_clear(it, 0, color_cardinal_directions);
+                    set_if_clear(it, 15, color_cardinal_directions);
+                    set_if_clear(it, 30, color_cardinal_directions);
+                    set_if_clear(it, 45, color_cardinal_directions);
 
-                // set lighter markers for every 5 minutes when there's a clock hand nearby
-                set_if_clear(it, 5, color_proximity_makers, proximity_markers_distance);
-                set_if_clear(it, 10, color_proximity_makers, proximity_markers_distance);
-                set_if_clear(it, 20, color_proximity_makers, proximity_markers_distance);
-                set_if_clear(it, 25, color_proximity_makers, proximity_markers_distance);
-                set_if_clear(it, 35, color_proximity_makers, proximity_markers_distance);
-                set_if_clear(it, 40, color_proximity_makers, proximity_markers_distance);
-                set_if_clear(it, 55, color_proximity_makers, proximity_markers_distance);
+                    // set lighter markers for every 5 minutes when there's a clock hand nearby
+                    set_if_clear(it, 5, color_proximity_makers, proximity_markers_distance);
+                    set_if_clear(it, 10, color_proximity_makers, proximity_markers_distance);
+                    set_if_clear(it, 20, color_proximity_makers, proximity_markers_distance);
+                    set_if_clear(it, 25, color_proximity_makers, proximity_markers_distance);
+                    set_if_clear(it, 35, color_proximity_makers, proximity_markers_distance);
+                    set_if_clear(it, 40, color_proximity_makers, proximity_markers_distance);
+                    set_if_clear(it, 55, color_proximity_makers, proximity_markers_distance);
+                } else {
+                    // spinning loading animation
+                    it[59 - ((millis() / 20) % 60)] = esphome::Color::WHITE;
+                }
 
                 it.schedule_show();
             }
@@ -53,10 +58,12 @@ class InfinityClock: public Component {
                 this->hour = hour;
                 this->minute = minute;
                 this->second = second;
+                this->hasTime = true;
             }
         private:
             static const int8_t led_offset = 29;
             uint8_t hour, minute, second;
+            bool hasTime {false};
 
             /**
              * map minute/second counters to LED indices on the strip
