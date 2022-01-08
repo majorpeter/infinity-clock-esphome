@@ -4,12 +4,12 @@
 #define INF_CLOCK_EFFECT_NAME "Infinity Clock"
 
 class InfinityClock: public Component {
-    static const uint32_t color_cardinal_directions = 0x303030;
-    static const uint32_t color_proximity_makers = 0x202020;
+    static const esphome::Color color_cardinal_directions;
+    static const esphome::Color color_proximity_makers;
     static const uint8_t proximity_markers_distance = 3;
-    static const ESPColor color_hour_hand;
-    static const ESPColor color_minute_hand;
-    static const ESPColor color_second_hand;
+    static const esphome::Color color_hour_hand;
+    static const esphome::Color color_minute_hand;
+    static const esphome::Color color_second_hand;
 
     class Effect: public ::AddressableLightEffect {
         public:
@@ -18,9 +18,9 @@ class InfinityClock: public Component {
             }
             virtual ~Effect() {}
 
-            virtual void apply(AddressableLight &it, const ESPColor &current_color) override {
+            virtual void apply(AddressableLight &it, const esphome::Color &current_color) override {
                 // clear all LED's
-                it.all() = ESPColor::BLACK;
+                it.all() = esphome::Color::BLACK;
 
                 // map hour (12h) to LED index
                 const uint8_t _hour = (hour % 12) * 5;
@@ -45,6 +45,8 @@ class InfinityClock: public Component {
                 set_if_clear(it, 35, color_proximity_makers, proximity_markers_distance);
                 set_if_clear(it, 40, color_proximity_makers, proximity_markers_distance);
                 set_if_clear(it, 55, color_proximity_makers, proximity_markers_distance);
+
+                it.schedule_show();
             }
 
             void set_time(uint8_t hour, uint8_t minute, uint8_t second) {
@@ -75,7 +77,7 @@ class InfinityClock: public Component {
              * @param color color to set on LED if not on
              * @param proximity also check whether any LED is on next to led_index in this proximity
              */
-            void set_if_clear(AddressableLight &it, int8_t led_index, ESPColor color, uint8_t proximity = 0) {
+            void set_if_clear(AddressableLight &it, int8_t led_index, esphome::Color color, uint8_t proximity = 0) {
                 if (it[map(led_index)].get().is_on()) {
                     return;  // the LED is already lit up, don't change it
                 }
@@ -119,6 +121,8 @@ private:
     Effect *effect;
 };
 
-const ESPColor InfinityClock::color_hour_hand = ESPColor(0xff0000);
-const ESPColor InfinityClock::color_minute_hand = ESPColor(0x00ff00);
-const ESPColor InfinityClock::color_second_hand = ESPColor(0x0000ff);
+const esphome::Color InfinityClock::color_cardinal_directions = esphome::Color(0x303030);
+const esphome::Color InfinityClock::color_proximity_makers = esphome::Color(0x202020);
+const esphome::Color InfinityClock::color_hour_hand = esphome::Color(0xff0000);
+const esphome::Color InfinityClock::color_minute_hand = esphome::Color(0x00ff00);
+const esphome::Color InfinityClock::color_second_hand = esphome::Color(0x0000ff);
