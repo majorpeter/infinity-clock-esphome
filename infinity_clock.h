@@ -11,6 +11,9 @@ class InfinityClock: public Component {
     static const esphome::Color color_minute_hand;
     static const esphome::Color color_second_hand;
 
+    static const uint16_t minutes_animation_before_ms = 1500;
+    static const uint16_t seconds_animation_before_ms = 200;
+
     class Effect: public ::AddressableLightEffect {
         public:
             explicit Effect(): AddressableLightEffect(INF_CLOCK_EFFECT_NAME) {
@@ -29,8 +32,22 @@ class InfinityClock: public Component {
                     it[map(_hour)] = it[map(_hour)].get() + color_hour_hand;
                     it[map(_hour + 1)] = it[map(_hour + 1)].get() + color_hour_hand;
 
-                    it[map(minute)] = it[map(minute)].get() + color_minute_hand;
-                    it[map(second)] = it[map(second)].get() + color_second_hand;
+                    const auto ms = calcMillisClamped();
+                    if (second * 1000 + ms < 60000 - minutes_animation_before_ms) {
+                        it[map(minute)] = it[map(minute)].get() + color_minute_hand;
+                    } else {
+                        const uint8_t scale = 255 * (60000 - (second * 1000 + ms)) / minutes_animation_before_ms;
+                        it[map(minute)] = it[map(minute)].get() + color_minute_hand * scale;
+                        it[map(minute + 1)] = it[map(minute + 1)].get() + color_minute_hand * (255 - scale);
+                    }
+
+                    if (ms < 1000 - seconds_animation_before_ms) {
+                        it[map(second)] = it[map(second)].get() + color_second_hand;
+                    } else {
+                        const uint8_t scale = 255 * (1000 - ms) / seconds_animation_before_ms;
+                        it[map(second)] = it[map(second)].get() + color_second_hand * scale;
+                        it[map(second + 1)] = it[map(second + 1)].get() + color_second_hand * (255 - scale);
+                    }
 
                     // set markers for N/E/S/W directions
                     set_if_clear(it, 0, color_cardinal_directions);
@@ -55,14 +72,21 @@ class InfinityClock: public Component {
             }
 
             void set_time(uint8_t hour, uint8_t minute, uint8_t second) {
+                if (this->second != second) {
+                    millis0 = millis();
+                }
+
                 this->hour = hour;
                 this->minute = minute;
                 this->second = second;
+
                 this->hasTime = true;
             }
         private:
             static const int8_t led_offset = 29;
             uint8_t hour, minute, second;
+            /// millis() when SNTP time millis was around 0 and the second incremented, required for animations
+            uint32_t millis0 {0};
             bool hasTime {false};
 
             /**
@@ -101,6 +125,19 @@ class InfinityClock: public Component {
                         }
                     }
                 }
+            }
+
+            /**
+             * estimates SNTP millis()
+             *
+             * @return uint16_t current time milliseconds [0-999]
+             */
+            uint16_t calcMillisClamped() {
+                const uint32_t delta = millis() - millis0;
+                if (delta > 999) {
+                    return 999;
+                }
+                return delta;
             }
     };
 
