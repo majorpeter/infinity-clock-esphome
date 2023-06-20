@@ -11,6 +11,7 @@ class InfinityClock: public Component {
     static const esphome::Color color_minute_hand;
     static const esphome::Color color_second_hand;
 
+    static const uint16_t hour_animation_before_ms = 2600;
     static const uint16_t minutes_animation_before_ms = 1500;
     static const uint16_t seconds_animation_before_ms = 200;
 
@@ -26,13 +27,20 @@ class InfinityClock: public Component {
                 it.all() = esphome::Color::BLACK;
 
                 if (hasTime) {
+                    const auto ms = calcMillisClamped();
+
                     // map hour (12h) to LED index
-                    const uint8_t _hour = (hour % 12) * 5;
+                    uint8_t _hour = (hour % 12) * hour_to_60_scaler;
+                    if (minute == 59) {
+                        const auto anim = second * 1000 + ms;
+                        if (anim >= 60000 - hour_animation_before_ms) {
+                            _hour += hour_to_60_scaler * (anim - 60000 + hour_animation_before_ms) / hour_animation_before_ms;
+                        }
+                    }
                     it[map(_hour - 1)] = it[map(_hour - 1)].get() + color_hour_hand;
                     it[map(_hour)] = it[map(_hour)].get() + color_hour_hand;
                     it[map(_hour + 1)] = it[map(_hour + 1)].get() + color_hour_hand;
 
-                    const auto ms = calcMillisClamped();
                     if (second * 1000 + ms < 60000 - minutes_animation_before_ms) {
                         it[map(minute)] = it[map(minute)].get() + color_minute_hand;
                     } else {
@@ -84,6 +92,7 @@ class InfinityClock: public Component {
             }
         private:
             static const int8_t led_offset = 29;
+            static const uint8_t hour_to_60_scaler = 5;
             uint8_t hour, minute, second;
             /// millis() when SNTP time millis was around 0 and the second incremented, required for animations
             uint32_t millis0 {0};
