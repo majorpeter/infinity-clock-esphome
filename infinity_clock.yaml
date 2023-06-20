@@ -1,9 +1,12 @@
 esphome:
   name: infinity_clock
-  platform: ESP8266
-  board: esp01_1m
   includes:
     - infinity_clock.h
+
+esp8266:
+  board: esp01_1m
+  framework:
+    version: 2.7.4
 
 <<: !include secrets.yaml
 
